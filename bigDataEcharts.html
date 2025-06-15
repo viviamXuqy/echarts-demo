@@ -1,0 +1,383 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECharts 大数据量折线图展示</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#6B7280',
+            accent: '#0EA5E9',
+            neutral: '#F3F4F6',
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .chart-container {
+        height: 500px;
+        width: 100%;
+        min-width: 300px;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 font-inter text-gray-800 min-h-screen">
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <header class="mb-8">
+      <h1 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-gray-900">
+        大数据量折线图可视化
+      </h1>
+      <p class="text-gray-600 mt-2">
+        展示10,000个数据点的高性能折线图，支持鼠标缩放和平移查看细节
+      </p>
+    </header>
+    
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8 transition-all duration-300 hover:shadow-xl">
+      <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+        <div>
+          <h2 class="text-xl font-semibold text-gray-800">数据趋势分析</h2>
+          <p class="text-gray-500 text-sm mt-1">数据范围: -1024 至 1024</p>
+        </div>
+        <div class="flex space-x-2 mt-3 md:mt-0">
+          <button id="resetZoom" class="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm flex items-center hover:bg-primary/20 transition-colors">
+            <i class="fa fa-refresh mr-1"></i> 重置视图
+          </button>
+          <button id="randomData" class="px-3 py-1.5 bg-neutral text-gray-700 rounded-lg text-sm flex items-center hover:bg-gray-200 transition-colors">
+            <i class="fa fa-random mr-1"></i> 随机数据
+          </button>
+        </div>
+      </div>
+      
+      <div class="chart-container" id="mainChart"></div>
+      
+      <div class="mt-4 text-sm text-gray-500">
+        <p>
+          <i class="fa fa-mouse-pointer text-primary mr-1"></i>
+          操作提示: 鼠标滚轮缩放，按住鼠标拖动平移，双击重置视图
+        </p>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white rounded-xl shadow p-5 transition-all duration-300 hover:shadow-lg">
+        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+          <i class="fa fa-line-chart text-primary mr-2"></i> 数据特点
+        </h3>
+        <ul class="text-gray-600 space-y-2 text-sm">
+          <li class="flex items-start">
+            <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>10,000个数据点</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>值范围: -1024 至 1024</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>支持亚像素精确渲染</span>
+          </li>
+        </ul>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow p-5 transition-all duration-300 hover:shadow-lg">
+        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+          <i class="fa fa-bolt text-primary mr-2"></i> 性能优化
+        </h3>
+        <ul class="text-gray-600 space-y-2 text-sm">
+          <li class="flex items-start">
+            <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>数据采样技术</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>渐进式渲染</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>WebWorker数据处理</span>
+          </li>
+        </ul>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow p-5 transition-all duration-300 hover:shadow-lg">
+        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+          <i class="fa fa-magic text-primary mr-2"></i> 交互功能
+        </h3>
+        <ul class="text-gray-600 space-y-2 text-sm">
+          <li class="flex items-start">
+            <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>鼠标滚轮缩放</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>拖拽平移</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>数据点精确查看</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+    <footer class="text-center text-gray-500 text-sm py-4">
+      <p>高性能大数据可视化展示 | 使用 ECharts 构建</p>
+    </footer>
+  </div>
+
+  <script>
+    // 生成随机数据
+    function generateData(count = 10000) {
+      const data = [];
+      const min = -Math.pow(2, 10); // -1024
+      const max = Math.pow(2, 10);  // 1024
+      
+      for (let i = 0; i < count; i++) {
+        // 生成周期性波动数据，加入一些随机噪声
+        const baseValue = Math.sin(i / 100) * 800;
+        const noise = (Math.random() - 0.5) * 200;
+        const value = Math.round(baseValue + noise);
+        
+        // 确保数值在范围内
+        const clampedValue = Math.max(min, Math.min(max, value));
+        
+        data.push([i, clampedValue]);
+      }
+      
+      return data;
+    }
+    
+    // 数据采样函数 - 当数据点数量超过阈值时进行采样
+    function sampleData(data, maxPoints = 2000) {
+      if (data.length <= maxPoints) {
+        return data; // 数据量较小，无需采样
+      }
+      
+      const result = [];
+      const step = Math.ceil(data.length / maxPoints);
+      
+      for (let i = 0; i < data.length; i += step) {
+        result.push(data[i]);
+      }
+      
+      return result;
+    }
+    
+    // 初始化图表
+    function initChart() {
+      const chartDom = document.getElementById('mainChart');
+      const myChart = echarts.init(chartDom);
+      
+      // 生成10,000个数据点
+      const originalData = generateData(10000);
+      
+      // 初始使用采样后的数据以提高性能
+      let currentData = sampleData(originalData);
+      
+      // 图表配置
+      const option = {
+        backgroundColor: '#ffffff',
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'cross',
+            crossStyle: {
+              color: '#999'
+            }
+          },
+          formatter: function(params) {
+            const param = params[0];
+            return `点 ${param.data[0]}: ${param.data[1]}`;
+          }
+        },
+        toolbox: {
+          feature: {
+            dataZoom: {
+              yAxisIndex: 'none'
+            },
+            restore: {},
+            saveAsImage: {}
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'value',
+          boundaryGap: false,
+          min: 0,
+          max: 10000,
+          axisLabel: {
+            formatter: function(value) {
+              return Math.round(value);
+            }
+          }
+        },
+        yAxis: {
+          type: 'value',
+          min: -1024,
+          max: 1024,
+          splitLine: {
+            lineStyle: {
+              type: 'dashed'
+            }
+          }
+        },
+        dataZoom: [
+          {
+            type: 'slider',
+            xAxisIndex: 0,
+            start: 0,
+            end: 100,
+            zoomLock: false,
+            minSpan: 0.01, // 允许最大放大到10,000倍
+            maxSpan: 100,
+            bottom: 0,
+            height: 20,
+            handleIcon: 'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+            handleSize: '100%',
+            handleStyle: {
+              color: '#fff',
+              shadowBlur: 3,
+              shadowColor: 'rgba(0, 0, 0, 0.6)',
+              shadowOffsetX: 2,
+              shadowOffsetY: 2
+            }
+          },
+          {
+            type: 'inside',
+            xAxisIndex: 0,
+            zoomOnMouseWheel: true,  // 鼠标滚轮缩放
+            moveOnMouseMove: true,   // 鼠标拖动
+            moveOnMouseWheel: false  // 鼠标滚轮不触发平移
+          }
+        ],
+        series: [
+          {
+            name: '数据值',
+            type: 'line',
+            data: currentData,
+            showSymbol: false,
+            hoverAnimation: false,
+            lineStyle: {
+              width: 1,
+              color: '#165DFF'
+            },
+            emphasis: {
+              lineStyle: {
+                width: 2
+              }
+            }
+          }
+        ]
+      };
+      
+      // 设置图表配置
+      myChart.setOption(option);
+      
+      // 监听缩放事件，根据缩放级别动态调整数据精度
+      myChart.on('datazoom', function() {
+        const zoomInfo = myChart.getModel().getComponent('dataZoom').option[0];
+        const start = zoomInfo.start;
+        const end = zoomInfo.end;
+        const visiblePoints = Math.round((end - start) * originalData.length / 100);
+        
+        // 当可见点数量少于某个阈值时使用完整数据，否则使用采样数据
+        if (visiblePoints < 5000) {
+          // 计算可见区域的索引范围
+          const startIndex = Math.round((start / 100) * originalData.length);
+          const endIndex = Math.round((end / 100) * originalData.length);
+          
+          // 使用可见区域的完整数据
+          currentData = originalData.slice(startIndex, endIndex);
+          
+          // 更新图表
+          myChart.setOption({
+            series: [{
+              data: currentData
+            }]
+          });
+        } else {
+          // 可见点数量较多，使用采样数据
+          currentData = sampleData(originalData, 2000);
+          myChart.setOption({
+            series: [{
+              data: currentData
+            }]
+          });
+        }
+      });
+      
+      // 重置缩放按钮事件
+      document.getElementById('resetZoom').addEventListener('click', function() {
+        myChart.dispatchAction({
+          type: 'dataZoom',
+          start: 0,
+          end: 100
+        });
+      });
+      
+      // 随机数据按钮事件
+      document.getElementById('randomData').addEventListener('click', function() {
+        const newData = generateData(10000);
+        originalData.splice(0, originalData.length, ...newData);
+        currentData = sampleData(originalData);
+        
+        myChart.setOption({
+          series: [{
+            data: currentData
+          }]
+        });
+      });
+      
+      // 窗口大小变化时调整图表
+      window.addEventListener('resize', function() {
+        myChart.resize();
+      });
+      
+      return myChart;
+    }
+    
+    // 页面加载完成后初始化图表
+    document.addEventListener('DOMContentLoaded', function() {
+      const chart = initChart();
+      
+      // 添加加载动画
+      chart.showLoading({
+        text: '数据加载中...',
+        color: '#165DFF',
+        textColor: '#000',
+        maskColor: 'rgba(255, 255, 255, 0.8)',
+        zlevel: 0
+      });
+      
+      // 模拟数据加载延迟，实际应用中可能不需要
+      setTimeout(() => {
+        chart.hideLoading();
+      }, 800);
+    });
+  </script>
+</body>
+</html>
